@@ -1,0 +1,10 @@
+{
+  "total": 605,
+  "pass": 605,
+  "fail": 0,
+  "reasons": {
+    "tooShort": 0,
+    "bannedTokens": 0
+  },
+  "generatedAt": "2025-08-14T08:53:09.919Z"
+}

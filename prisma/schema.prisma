@@ -1,0 +1,82 @@
+// ---------- REQUIRED: datasource & generator ----------
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ---------- EXISTING TABLES (Prisma가 만든 것) ----------
+model User {
+  id        String   @id @default(cuid())
+  pseudoId  String   @unique
+  createdAt DateTime @default(now())
+  essays    Essay[]
+}
+
+model Essay {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  chunks    Chunk[]
+}
+
+model Chunk {
+  id        String   @id @default(cuid())
+  essayId   String
+  essay     Essay    @relation(fields: [essayId], references: [id])
+  text      String
+  valid     Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+// ---------- MANUALLY-CREATED TABLES (우리가 SQL로 만든 것) ----------
+model Draft {
+  id        String   @id
+  authorId  String?  @map("author_id")
+  company   String?
+  position  String?
+  jd        String?
+  tone      String?
+  text      String?
+  status    String   @default("preview")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  attributions Attribution[]
+  rewards      RewardLedger[]
+
+  @@map("Draft") // 실제 DB 테이블명
+}
+
+model Attribution {
+  id            String  @id
+  draftId       String  @map("draft_id")
+  chunkId       String? @map("chunk_id")
+  contributorId String  @map("contributor_id")
+  similarity    Float?
+  weight        Float?
+  normWeight    Float?  @map("norm_weight")
+
+  draft Draft @relation(fields: [draftId], references: [id])
+  // 필요 시 Chunk/User 관계도 추가 가능
+
+  @@map("Attribution")
+}
+
+model RewardLedger {
+  id            String   @id
+  draftId       String   @map("draft_id")
+  contributorId String   @map("contributor_id")
+  amountPreview Decimal? @map("amount_preview") @db.Decimal(12, 1)
+  amountSettled Decimal? @map("amount_settled") @db.Decimal(12, 1)
+  amountClaimed Decimal? @map("amount_claimed") @db.Decimal(12, 1)
+  status        String   @default("preview")
+  txHash        String?  @map("tx_hash")
+
+  draft Draft @relation(fields: [draftId], references: [id])
+
+  @@map("RewardLedger")
+}
